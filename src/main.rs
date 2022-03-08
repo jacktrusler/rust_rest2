@@ -1,7 +1,8 @@
 #[macro_use] extern crate rocket;
 
 use rocket::serde::{Serialize, Deserialize};
-use rocket::serde::json::Json;
+use rocket::serde::json::{Json, Value};
+use rocket::serde::json::serde_json::json;
 use rusqlite::{Connection, Result};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -78,6 +79,11 @@ fn get_all_contacts() -> Result<Json<ContactList>, String> {
 
 }
 
+#[options("/add_contact")]
+fn gimme() -> Value {
+    json!({"options": "request fulfilled"})
+}
+
 #[post("/add_contact", format = "application/json", data="<contact>")]
 fn add_contact(contact: Json<Contact>) -> Result<String, String> {
 
@@ -103,12 +109,12 @@ fn add_contact(contact: Json<Contact>) -> Result<String, String> {
                                   results,
                                 )),
 
-        Err(e) => Err(format!("failed to add contact"))
+        Err(_) => Err(format!("failed to add contact"))
     }
 
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, add_contact, get_all_contacts])
+    rocket::build().mount("/", routes![index, add_contact, get_all_contacts, gimme])
 }
