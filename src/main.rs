@@ -1,5 +1,8 @@
 #[macro_use] extern crate rocket;
 
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::{Request, Response};
+use rocket::http::Header;
 use rocket::serde::{Serialize, Deserialize};
 use rocket::serde::json::{Json, Value};
 use rocket::serde::json::serde_json::json;
@@ -114,7 +117,28 @@ fn add_contact(contact: Json<Contact>) -> Result<String, String> {
 
 }
 
+pub struct CORS;
+
+#[rocket::async_trait]
+impl Fairing for CORS {
+    fn info(&self) -> Info {
+        Info {
+            name: "Add CORS headers to responses",
+            kind: Kind::Response
+        }
+    }
+
+    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Methods", "POST, GET, PATCH, OPTIONS"));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
+    }
+}
+
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, add_contact, get_all_contacts, gimme])
+    rocket::build()
+        .mount("/", routes![index, add_contact, get_all_contacts, gimme])
+        .attach(CORS)
 }
